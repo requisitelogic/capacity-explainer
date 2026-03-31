@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Requisite Logic - IT Capacity Explainer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #0f0f0f; --fg: #f0f0f0; --muted: #a0a0a0; --accent: #0066ff; --border: #222; }
+        body { font-family: 'DM Sans', Arial, helvetica, sans-serif; margin: 0; background: var(--bg); color: var(--fg); }
+        .wrap { max-width: 1100px; margin: 0 auto; padding: 20px; }
+        header { background: var(--bg); border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+        .brand { font-size: 1.1rem; font-weight: 700; color: var(--fg); }
+        nav a { margin-left: 18px; color: var(--muted); text-decoration: none; font-weight: 600; }
+        .section { padding: 36px 0; }
+        .card { background: #151515; border: 1px solid var(--border); border-radius: 16px; padding: 26px; margin: 18px 0; box-shadow: 0 8px 24px rgba(0,0,0,0.04); }
+        h1 { font-size: 2rem; margin-top: 0; color: var(--fg); }
+        p { line-height: 1.6; color: var(--muted); }
+        .pools { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; margin-top: 18px; }
+        .pool { background: #1c1c1c; border: 1px solid var(--border); border-radius: 14px; padding: 24px; }
+        .pool h3 { margin-top: 0; font-size: 1.2rem; color: var(--fg); }
+        .status { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 0.88rem; font-weight: 600; }
+        .status.healthy { background: #00cc6b; color: #000; }
+        .status.moderate { background: #ffb020; color: #210; }
+        .status.constrained { background: #e63946; color: #fff; }
+        .note { font-size: 0.88rem; color: var(--muted); margin: 14px 0; }
+        .controls { display: flex; gap: 14px; margin-top: 18px; flex-wrap: wrap; }
+        .slider { width: 100%; margin: 10px 0; }
+        .editor { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); padding: 32px; justify-content: center; align-items: flex-start; overflow-y: auto; }
+        .editor.active { display: flex; }
+        .editor-content { background: #1c1c1c; border-radius: 14px; border: 1px solid var(--border); padding: 28px; max-width: 800px; width: 95%; margin: 20px 0; }
+        .pool-list { margin: 18px 0; }
+        .pool-row { display: grid; grid-template-columns: 1fr 180px 140px 80px; gap: 14px; margin-bottom: 12px; align-items: center; background: #151515; padding: 10px 16px; border-radius: 8px; }
+        .pool-row input { box-sizing: border-box; width: 100%; background: #1f1f1f; border: 1px solid var(--border); color: var(--fg); padding: 0 14px; height: 40px; border-radius: 6px; }
+        .pool-row select { color: var(--fg); background: #1f1f1f; border: 1px solid var(--border); height: 40px; border-radius: 6px; padding: 0 12px; }
+        .pool-row button { background: transparent; border: none; color: #e63946; cursor: pointer; font-size: 1.3rem; }
+        .add-pool { display: block; width: 100%; padding: 10px 0; text-align: center; border: 2px dashed var(--border); background: transparent; color: var(--muted); border-radius: 8px; margin-top: 14px; cursor: pointer; }
+        .group-label { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin: 28px 0 12px 0; }
+        .badge { padding: 4px 10px; border-radius: 50px; font-size: 0.85rem; font-weight: 700; display: inline-block; }
+        .badge-core { color: var(--accent); }
+        .badge-platform { color: var(--muted); }
+        footer { padding: 28px 0; color: var(--muted); text-align: center; }
+        .cta { background: #0066ff; color: #fff; padding: 14px 22px; border-radius: 999px; font-weight: 700; text-decoration: none; display: inline-block; }
+        @media (max-width: 780px) { .pool-row { grid-template-columns: 1fr 100px auto; gap: 10px; } header { flex-direction: column; align-items: flex-start; } }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="brand">Requisite Logic</div>
+        <nav><a href="#" class="manage-pools-btn">Manage pools</a></nav>
+    </header>
+    <div class="wrap">
+        <section class="section">
+            <div class="card">
+                <h1>IT capacity is not one budget. It is several different pools with different speed limits.</h1>
+                <p>Business stakeholders often treat IT capacity as a single pool. It is not. If three projects require a security review, and your cybersecurity team can only complete two per quarter, you do not have a prioritization problem. You have a capacity problem.</p>
+            </div>
+        </section>
+        <section class="section">
+            <h2>Your current IT capacity model</h2>
+            <p>Drag the sliders below to reflect reality. Changes save automatically in your browser.</p>
+            <div id="pool-cards" class="pools"></div>
+        </section>
+    </div>
+    <div class="editor" id="editor">
+        <div class="editor-content">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+                <h2>Manage capacity pools</h2>
+                <button class="close-editor" style="background:transparent; border:none; color:var(--muted); font-size:1.4rem; cursor:pointer;">&times;</button>
+            </div>
+            <div id="pool-manager" class="pool-list"></div>
+        </div>
+    </div>
+    <footer>
+        <p>Requisite Logic | IT Capacity Explainer | Share this with stakeholders before steering committee meetings</p>
+    </footer>
+    <script>
+const STORAGE_KEY = 'req-logic-capacity-v1';
+const DEFAULTS = [
+  {id:'eng', name:'Software Engineering', group:'Core IT', allocation:68, status:'Constrained', note:'~2-3 feature teams active', description:'The team that builds internal and customer-facing software. When this pool is full, even high-value requests stall in queue, not in execution.'},
+  {id:'data', name:'Data & Analytics', group:'Core IT', allocation:72, status:'Constrained', note:'1 engineer available for new builds', description:'Turns raw operational data into dashboards, models, and decision support. Often underestimated as "just reporting" when it is actually decision infrastructure.'},
+  {id:'cyber', name:'Cybersecurity & Third Party Risk Review', group:'Core IT', allocation:80, status:'Constrained', description:'Security review, vendor risk assessments, penetration testing, and compliance. Works exactly like a surgical bottleneck: you cannot speed it up by approving more projects at once.'},
+  {id:'infra', name:'Infrastructure & Platform', group:'Core IT', allocation:64, status:'Moderate', note:'Steady-state; no major incidents pending', description:'Cloud, network, compute, and platform stability work. The plumbing everything else runs through.'},
+  {id:'proc', name:'Procurement & Vendor Management', group:'Core IT', allocation:70, status:'Moderate', description:'RFPs, contract negotiations, vendor onboarding, license management. Often the invisible bottleneck because it happens before technical work begins.'}
+];
+let pools;
+
+function load() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    pools = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(DEFAULTS));
+  } catch(e) { pools = JSON.parse(JSON.stringify(DEFAULTS)); }
+  if (!Array.isArray(pools) || pools.length === 0) pools = JSON.parse(JSON.stringify(DEFAULTS));
+}
+
+function save() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(pools)); } catch(e) { console.warn('localStorage save failed:', e); }
+}
+
+function badgeHTML(pool) {
+  if (pool.status === 'Constrained') return '<span class="badge badge-constrained" data-id="'+pool.id+'">Constrained</span>';
+  if (pool.status === 'Moderate') return '<span class="badge badge-moderate" data-id="'+pool.id+'">Moderate</span>';
+  return '<span class="badge badge-healthy" data-id="'+pool.id+'">Healthy</span>';
+}
+
+function cardHTML(pool) {
+  return `<div class="pool" data-id="${pool.id}">
+    <h3>${pool.name}</h3>
+    <div>${badgeHTML(pool)}</div>
+    <p class="note">${pool.note || 'No note available'}</p>
+    <p>${pool.description}</p>
+    <div class="controls">
+      <input type="range" min="0" max="100" value="${pool.allocation}" data-id="${pool.id}" class="slider">
+      <span style="font-size:0.9rem; font-weight:700; color:var(--fg);">${pool.allocation}%</span>
+    </div>
+  </div>`;
+}
+
+function renderCards() {
+  document.getElementById('pool-cards').innerHTML = pools.map(cardHTML).join('');
+  document.querySelectorAll('.slider').forEach(slider => {
+    slider.addEventListener('input', function() {
+      const id = this.getAttribute('data-id');
+      const pool = pools.find(p => p.id === id);
+      if (pool) {
+        pool.allocation = parseInt(this.value);
+        pool.status = pool.allocation > 75 ? 'Constrained' : pool.allocation >= 55 ? 'Moderate' : 'Healthy';
+        renderCards();
+        save();
+      }
+    });
+  });
+}
+
+function renderManager() {
+  const core = pools.filter(p => p.group === 'Core IT');
+  const plat = pools.filter(p => p.group === 'Platform');
+  let html = '<div class="group-label">Core IT</div><div class="pool-rows">';
+  core.forEach(p => { html += poolRowHTML(p); });
+  html += '</div><div class="group-label">Platform</div><div class="pool-rows">';
+  plat.forEach(p => { html += poolRowHTML(p); });
+  html += '</div>';
+  html += '<button class="add-pool" id="add-core">+ Add pool to Core IT</button>';
+  html += '<button class="add-pool" id="add-platform">+ Add pool to Platform</button>';
+  document.getElementById('pool-manager').innerHTML = html;
+
+  document.querySelectorAll('.slider').forEach(s => {
+    s.addEventListener('input', function() {
+      const id = this.getAttribute('data-id');
+      const pool = pools.find(p => p.id === id);
+      if (pool) {
+        pool.allocation = parseInt(this.value);
+        pool.status = pool.allocation > 75 ? 'Constrained' : pool.allocation >= 55 ? 'Moderate' : 'Healthy';
+        this.nextElementSibling.textContent = pool.allocation + '%';
+        renderManager();
+        renderCards();
+        save();
+      }
+    });
+  });
+
+  document.querySelectorAll('.delete').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const id = this.getAttribute('data-id');
+      if (confirm('Delete this pool? This cannot be undone.')) {
+        pools = pools.filter(p => p.id !== id);
+        renderManager();
+        renderCards();
+        save();
+      }
+    });
+  });
+
+  document.getElementById('add-core').addEventListener('click', function() { addPool('Core IT'); });
+  document.getElementById('add-platform').addEventListener('click', function() { addPool('Platform'); });
+}
+
+function poolRowHTML(pool) {
+  return `<div class="pool-row" data-id="${pool.id}">
+    <input type="text" value="${pool.name.trim()}" data-id="${pool.id}" placeholder="Pool name">
+    <input type="range" min="0" max="100" value="${pool.allocation}" class="slider" data-id="${pool.id}">
+    <select data-id="${pool.id}">
+      <option${pool.status === 'Healthy' ? ' selected' : ''}>Healthy</option>
+      <option${pool.status === 'Moderate' ? ' selected' : ''}>Moderate</option>
+      <option${pool.status === 'Constrained' ? ' selected' : ''}>Constrained</option>
+    </select>
+    <button class="delete" data-id="${pool.id}" title="Delete pool">&times;</button>
+  </div>`;
+}
+
+function addPool(group) {
+  const id = 'pool-' + Math.random().toString(36).slice(2, 9);
+  const name = group === 'Core IT' ? 'New Core IT Pool' : 'New Platform Pool';
+  pools.push({id, name, group, allocation:10, status:'Healthy', note:'', description:'Add a description for stakeholders.'});
+  renderManager();
+  renderCards();
+  save();
+}
+
+function openEditor() { document.getElementById('editor').classList.add('active'); renderManager(); }
+function closeEditor() { document.getElementById('editor').classList.remove('active'); renderManager(); renderCards(); }
+
+document.querySelector('.manage-pools-btn').addEventListener('click', openEditor);
+document.querySelector('.close-editor').addEventListener('click', closeEditor);
+document.getElementById('editor').addEventListener('click', e => { if (e.target === document.getElementById('editor')) closeEditor(); });
+
+load();
+renderCards();
+    </script>
+</body>
+</html>
