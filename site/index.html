@@ -192,6 +192,31 @@ function renderManager() {
     });
   });
 
+  // Persist name changes and status selections
+  document.querySelectorAll('.pool-row input[type="text"]').forEach(inp => {
+    inp.addEventListener('input', function() {
+      const id = this.getAttribute('data-id');
+      const pool = pools.find(p => p.id === id);
+      if (pool) {
+        pool.name = this.value;
+        save();
+        renderCards();
+      }
+    });
+  });
+
+  document.querySelectorAll('.pool-row select').forEach(sel => {
+    sel.addEventListener('change', function() {
+      const id = this.getAttribute('data-id');
+      const pool = pools.find(p => p.id === id);
+      if (pool) {
+        pool.status = this.value;
+        save();
+        renderCards();
+      }
+    });
+  });
+
   document.getElementById('add-core').addEventListener('click', function() { addPool('Core IT'); });
   document.getElementById('add-platform').addEventListener('click', function() { addPool('Platform'); });
 }
