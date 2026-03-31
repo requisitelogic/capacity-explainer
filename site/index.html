@@ -44,7 +44,7 @@
         .editor.active { display: flex; }
         .editor-content { background: var(--bg-card); border-radius: 14px; border: 1px solid var(--border); padding: 28px; max-width: 800px; width: 95%; margin: 20px 0; }
         .pool-list { margin: 18px 0; }
-        .pool-row { display: grid; grid-template-columns: 1fr 180px 140px 80px; gap: 14px; margin-bottom: 12px; align-items: center; background: var(--bg-card); padding: 10px 16px; border-radius: 8px; }
+        .pool-row { display: grid; grid-template-columns: 1fr 140px 180px 140px 80px; gap: 14px; margin-bottom: 12px; align-items: center; background: var(--bg-card); padding: 10px 16px; border-radius: 8px; }
         .pool-row input { box-sizing: border-box; width: 100%; background: var(--input-bg); border: 1px solid var(--border); color: var(--fg); padding: 0 14px; height: 40px; border-radius: 6px; }
         .pool-row select { color: var(--fg); background: var(--input-bg); border: 1px solid var(--border); height: 40px; border-radius: 6px; padding: 0 12px; }
         .pool-row button { background: transparent; border: none; color: #ff6b6b; cursor: pointer; font-size: 1.3rem; }
@@ -62,7 +62,7 @@
 .badge-moderate { background: rgba(255, 176, 32, 0.15); color: #ffd166; border: 1px solid rgba(255, 176, 32, 0.3); }
 .badge-healthy { background: rgba(0, 204, 107, 0.15); color: #00e676; border: 1px solid rgba(0, 204, 107, 0.3); }
 
-@media (max-width: 780px) { .pool-row { grid-template-columns: 1fr 100px auto; gap: 10px; } header { flex-direction: column; align-items: flex-start; } }
+@media (max-width: 780px) { .pool-row { grid-template-columns: 1fr 120px 100px auto; gap: 10px; } header { flex-direction: column; align-items: flex-start; } }
     </style>
 </head>
 <body>
@@ -98,11 +98,11 @@
     <script>
 const STORAGE_KEY = 'req-logic-capacity-v1';
 const DEFAULTS = [
-  {id:'eng', name:'Software Engineering', group:'Core IT', allocation:68, status:'Constrained', note:'~2-3 feature teams active', description:'The team that builds internal and customer-facing software. When this pool is full, even high-value requests stall in queue, not in execution.'},
-  {id:'data', name:'Data & Analytics', group:'Core IT', allocation:72, status:'Constrained', note:'1 engineer available for new builds', description:'Turns raw operational data into dashboards, models, and decision support. Often underestimated as "just reporting" when it is actually decision infrastructure.'},
-  {id:'cyber', name:'Cybersecurity & Third Party Risk Review', group:'Core IT', allocation:80, status:'Constrained', description:'Security review, vendor risk assessments, penetration testing, and compliance. Works exactly like a surgical bottleneck: you cannot speed it up by approving more projects at once.'},
-  {id:'infra', name:'Infrastructure & Platform', group:'Core IT', allocation:64, status:'Moderate', note:'Steady-state; no major incidents pending', description:'Cloud, network, compute, and platform stability work. The plumbing everything else runs through.'},
-  {id:'proc', name:'Procurement & Vendor Management', group:'Core IT', allocation:70, status:'Moderate', description:'RFPs, contract negotiations, vendor onboarding, license management. Often the invisible bottleneck because it happens before technical work begins.'}
+  {id:'eng', name:'Software Engineering', group:'Core IT', allocation:68, status:'Constrained', unit:'FTEs', note:'~2-3 feature teams active', description:'The team that builds internal and customer-facing software. When this pool is full, even high-value requests stall in queue, not in execution.'},
+  {id:'data', name:'Data & Analytics', group:'Core IT', allocation:72, status:'Constrained', unit:'FTEs', note:'1 engineer available for new builds', description:'Turns raw operational data into dashboards, models, and decision support. Often underestimated as "just reporting" when it is actually decision infrastructure.'},
+  {id:'cyber', name:'Cybersecurity & Third Party Risk Review', group:'Core IT', allocation:80, status:'Constrained', unit:'reviews / quarter', description:'Security review, vendor risk assessments, penetration testing, and compliance. Works exactly like a surgical bottleneck: you cannot speed it up by approving more projects at once.'},
+  {id:'infra', name:'Infrastructure & Platform', group:'Core IT', allocation:64, status:'Moderate', unit:'engineer capacity', note:'Steady-state; no major incidents pending', description:'Cloud, network, compute, and platform stability work. The plumbing everything else runs through.'},
+  {id:'proc', name:'Procurement & Vendor Management', group:'Core IT', allocation:70, status:'Moderate', unit:'active procurements', description:'RFPs, contract negotiations, vendor onboarding, license management. Often the invisible bottleneck because it happens before technical work begins.'}
 ];
 let pools;
 
@@ -112,6 +112,7 @@ function load() {
     pools = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(DEFAULTS));
   } catch(e) { pools = JSON.parse(JSON.stringify(DEFAULTS)); }
   if (!Array.isArray(pools) || pools.length === 0) pools = JSON.parse(JSON.stringify(DEFAULTS));
+  pools = pools.map(pool => ({ ...pool, unit: pool.unit || 'capacity units' }));
 }
 
 function save() {
@@ -128,6 +129,7 @@ function cardHTML(pool) {
   return `<div class="pool" data-id="${pool.id}">
     <h3>${pool.name}</h3>
     <div>${badgeHTML(pool)}</div>
+    <p class="note"><strong>Capacity unit:</strong> ${pool.unit || 'capacity units'}</p>
     <p class="note">${pool.note || 'No note available'}</p>
     <p>${pool.description}</p>
     <div class="controls">
@@ -192,13 +194,26 @@ function renderManager() {
     });
   });
 
-  // Persist name changes and status selections
-  document.querySelectorAll('.pool-row input[type="text"]').forEach(inp => {
+  // Persist name changes
+  document.querySelectorAll('.pool-row .name-input').forEach(inp => {
     inp.addEventListener('input', function() {
       const id = this.getAttribute('data-id');
       const pool = pools.find(p => p.id === id);
       if (pool) {
         pool.name = this.value;
+        save();
+        renderCards();
+      }
+    });
+  });
+
+  // Persist editable capacity units
+  document.querySelectorAll('.pool-row .unit-input').forEach(inp => {
+    inp.addEventListener('input', function() {
+      const id = this.getAttribute('data-id');
+      const pool = pools.find(p => p.id === id);
+      if (pool) {
+        pool.unit = this.value;
         save();
         renderCards();
       }
@@ -223,7 +238,8 @@ function renderManager() {
 
 function poolRowHTML(pool) {
   return `<div class="pool-row" data-id="${pool.id}">
-    <input type="text" value="${pool.name.trim()}" data-id="${pool.id}" placeholder="Pool name">
+    <input type="text" class="name-input" value="${pool.name.trim()}" data-id="${pool.id}" placeholder="Pool name">
+    <input type="text" class="unit-input" value="${pool.unit || ''}" data-id="${pool.id}" placeholder="Unit of measure">
     <input type="range" min="0" max="100" value="${pool.allocation}" class="slider" data-id="${pool.id}">
     <select data-id="${pool.id}">
       <option${pool.status === 'Healthy' ? ' selected' : ''}>Healthy</option>
@@ -237,7 +253,7 @@ function poolRowHTML(pool) {
 function addPool(group) {
   const id = 'pool-' + Math.random().toString(36).slice(2, 9);
   const name = group === 'Core IT' ? 'New Core IT Pool' : 'New Platform Pool';
-  pools.push({id, name, group, allocation:10, status:'Healthy', note:'', description:'Add a description for stakeholders.'});
+  pools.push({id, name, group, allocation:10, status:'Healthy', unit:'capacity units', note:'', description:'Add a description for stakeholders.'});
   renderManager();
   renderCards();
   save();
